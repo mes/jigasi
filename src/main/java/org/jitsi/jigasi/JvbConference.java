@@ -30,6 +30,7 @@ import org.jitsi.jigasi.util.*;
 import org.jitsi.jigasi.xmpp.*;
 import org.jitsi.service.neomedia.*;
 import org.jitsi.util.*;
+import org.jivesoftware.smack.*;
 import org.jivesoftware.smack.packet.*;
 import org.jivesoftware.smackx.packet.*;
 import org.osgi.framework.*;
@@ -1145,8 +1146,28 @@ public class JvbConference
 
         // this check just skips an exception when running tests
         if (xmppProvider instanceof ProtocolProviderServiceJabberImpl)
-            ((ProtocolProviderServiceJabberImpl) xmppProvider)
-                .getConnection().sendPacket(focusInviteIQ);
+        {
+            PacketCollector collector = null;
+            try
+            {
+                collector = ((ProtocolProviderServiceJabberImpl) xmppProvider)
+                    .getConnection()
+                    .createPacketCollectorAndSend(focusInviteIQ);
+                collector.nextResultOrThrow();
+            }
+            catch (XMPPException e)
+            {
+                logger.error(
+                    "Could not invite the focus to the conference", e);
+            }
+            finally
+            {
+                if (collector != null)
+                {
+                    collector.cancel();
+                }
+            }
+        }
     }
 
     /**
